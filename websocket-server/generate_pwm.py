@@ -71,8 +71,7 @@ class Esteira(Motor):
 		self.pin_out = pin_out
 		self.direction_port = direction_port
 		self.frequency = frequency
-		self.direction = False
-		self.direction_default = 1 # 1 equal False
+		self.direction = True
 		self.duty_cycle = 0
 		self.setup()
 		self.name = 'Esteira'
@@ -87,7 +86,7 @@ class Esteira(Motor):
 			self.pwm.ChangeDutyCycle(self.duty_cycle)
 		else:
 			if self.duty_cycle != 0:
-				self.set_duty_cycle(0, 1) # 1 equals False
+				self.set_duty_cycle(0)
 				self.shouldStop = False
 		
 		
