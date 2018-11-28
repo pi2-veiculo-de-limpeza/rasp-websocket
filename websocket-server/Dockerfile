@@ -1,7 +1,7 @@
 FROM python:3.6.7-alpine
 
-ADD . /code/server
-WORKDIR /code/server
+ADD . /code/websocket-server
+WORKDIR /code/websocket-server
 
 # RUN apt-get update && apt-get install python-pip
 RUN pip install --upgrade pip

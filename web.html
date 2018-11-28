@@ -13,7 +13,6 @@
                var ws = new WebSocket("ws://localhost:8000/echo");
 				
                ws.onopen = function() {
-                  
                   // Web Socket is connected, send data using send()
                   ws.send("Message to send");
                   alert("Message is sent...");
@@ -25,7 +24,6 @@
                };
 				
                ws.onclose = function() { 
-                  
                   // websocket is closed.
                   alert("Connection is closed..."); 
                };
