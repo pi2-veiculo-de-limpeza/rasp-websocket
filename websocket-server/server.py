@@ -13,7 +13,7 @@ async def hello(websocket, path):
             await websocket.send(greeting)
             print("> " + greeting)
             
-            time.sleep(0.1)
+            time.sleep(0.001)
         except websockets.exceptions.ConnectionClosed:
             print("end connection :D")
             break

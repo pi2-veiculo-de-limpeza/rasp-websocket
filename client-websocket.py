@@ -16,7 +16,6 @@ except ImportError:
 class API_Websocket(threading.Thread):
 
     def __init__(self, uri, loop_time=1.0/60):
-
         self.max_retries = 10
         self.retries = self.max_retries
         self.q = Queue.Queue()
@@ -136,8 +135,6 @@ class API():
 
     def sendBattery(self, data):
         self.api.onThread(API_Websocket.battery, self.api, data)
-
-
 
 api = API()
 api.start()
