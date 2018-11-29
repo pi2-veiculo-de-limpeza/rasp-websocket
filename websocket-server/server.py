@@ -2,7 +2,7 @@ from websocket_server import WebsocketServer as WSServer
 
 class WebsocketServer():
 
-	def __init__(self, PORT=8000, host='0.0.0.0'):
+	def __init__(self, host='0.0.0.0', PORT=8000):
 
 		self.websocket = WSServer(PORT, host=host)
 
@@ -11,7 +11,11 @@ class WebsocketServer():
 		self.websocket.set_fn_message_received(self.message_received)
 		
 	def start(self):
-		self.websocket.run_forever()
+		try:
+			self.websocket.run_forever()
+		except KeyboardInterrupt:
+			pass
+		
 
 	# Called for every client connecting (after handshake)
 	def new_client(self, client, server):
@@ -70,34 +74,3 @@ class WebsocketServer():
 
 	def turnOffMatCallback(self, callback):
 		self.turnOffMat = callback
-
-
-# example callbacks
-def rigthMotor(value, direction):
-	print("right: " + str(value) + " " + str(direction) )
-
-def leftMotor(value, direction):
-	print("left: " + str(value) + " " + str(direction) )
-
-def turnOffVehicle():
-	print("Turn off vehicle")
-
-def turnOnMat():
-	print("Turn on mat")
-
-def turnOffMat():
-	print("Turn off mat")
-
-
-# Create socket
-server = WebsocketServer()
-
-# Settings callbacks
-server.rightMotorCallback(rigthMotor)
-server.leftMotorCallback(leftMotor)
-server.turnOffVehicleCallback(turnOffVehicle)
-server.turnOnMatCallback(turnOnMat)
-server.turnOffMatCallback(turnOffMat)
-
-# Start server
-server.start()

@@ -13,4 +13,4 @@ RUN pip2 install -r requirements.txt
 # RUN pip install --upgrade pip
 # RUN pip install -r requirements.txt
 
-ENTRYPOINT python server.py
+ENTRYPOINT python main.py
