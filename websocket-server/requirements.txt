@@ -1,2 +1,1 @@
-websockets
-asyncio
+websocket-server==0.4
