@@ -31,9 +31,6 @@ class WebsocketServer():
 		array_message = message.split(',')
 		command = array_message[0]
 
-		print(message)
-		print(array_message)
-
 		if command == 'right':
 			if self.rightMotor:
 				self.rightMotor(array_message[1], array_message[2])
