@@ -6,7 +6,9 @@ WORKDIR /code/websocket-server
 
 RUN ln -s /usr/local/bin/pip2.7 /usr/local/bin/pip2
 
-RUN apt-get update && apt-get install python-pip python-setuptools -y
+RUN apt-get update
+RUN apt-get install git -y
+RUN apt-get install python-pip python-setuptools -y
 RUN pip2 install -r requirements.txt
 
 # RUN apt-get update && apt-get install python-pip
