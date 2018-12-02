@@ -45,10 +45,17 @@ class Motor():
 		print(self.name, self.duty_cycle, self.direction)
 	
 	def update(self):
+		
 		if self.changingDirection == False:
 			GPIO.output(self.direction_port, self.direction)
 			self.pwm.ChangeDutyCycle(self.duty_cycle)
+			message = '{},{},{}'.format(self.name, self.duty_cycle, self.direction)
+			ws.websocket.send_message_to_all(message)
+			print('message sent: {}'.format(message) )
 		else:
+			message = '{},{},{}'.format(self.name, 100, self.direction)
+			ws.websocket.send_send_message_to_all(message)
+			print('message sent: {}'.format(message) )
 			self.pwm.ChangeDutyCycle(100)
 
 	def handleDirectionChange(self):
