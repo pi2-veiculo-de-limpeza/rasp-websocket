@@ -8,6 +8,8 @@ from server import WebsocketServer
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 
+MIN_DC = 100
+
 esteira_pode_ser_iniciada = True
 
 class Motor():
@@ -17,7 +19,7 @@ class Motor():
 		self.direction_port = direction_port
 		self.frequency = frequency
 		self.direction = True
-		self.duty_cycle = 0
+		self.duty_cycle = MIN_DC
 		self.setup()
 		self.name = 'Motor'
 		self.changingDirection = False
@@ -31,7 +33,7 @@ class Motor():
 		# Configurando o PWM
 		self.pwm = GPIO.PWM(self.pin_out, self.frequency)
 		
-		self.pwm.start(0)
+		self.pwm.start(MIN_DC)
 
 	def set_duty_cycle(self, new_dc, direction=None):
 		if direction != None:
@@ -41,7 +43,7 @@ class Motor():
 				self.handleDirectionChange()
 			self.direction = new_dir
 		
-		self.duty_cycle = math.fabs(float(new_dc) - 100)
+		self.duty_cycle = math.fabs(float(new_dc) - MIN_DC)
 		print(self.name, self.duty_cycle, self.direction)
 	
 	def update(self):
@@ -50,7 +52,7 @@ class Motor():
 			GPIO.output(self.direction_port, self.direction)
 			self.pwm.ChangeDutyCycle(self.duty_cycle)
 		else:
-			self.pwm.ChangeDutyCycle(100)
+			self.pwm.ChangeDutyCycle(MIN_DC)
 
 	def handleDirectionChange(self):
 		p = threading.Thread(target=Motor.finishDirectionChange, args = (self,))
@@ -67,12 +69,12 @@ class Motor():
 		self.pwm.stop()
 		
 class Esteira(Motor):
-	def __init__(self, pin_out, direction_port=32, frequency=1000):
+	def __init__(self, pin_out, direction_port=33, frequency=1000):
 		self.pin_out = pin_out
 		self.direction_port = direction_port
 		self.frequency = frequency
 		self.direction = True
-		self.duty_cycle = 0
+		self.duty_cycle = MIN_DC
 		self.setup()
 		self.name = 'Esteira'
 		self.shouldStop = False
@@ -85,8 +87,8 @@ class Esteira(Motor):
 			GPIO.output(self.direction_port, self.direction)
 			self.pwm.ChangeDutyCycle(self.duty_cycle)
 		else:
-			if self.duty_cycle != 0:
-				self.set_duty_cycle(0)
+			if self.duty_cycle != MIN_DC:
+				self.set_duty_cycle(0) # set_dc -> transforms 100 in max
 				self.shouldStop = False
 		
 		
@@ -101,7 +103,7 @@ def start_inicial_esteira(esteira, vel_inicial, vel_final, delay):
 		esteira.set_duty_cycle(vel_inicial)
 		
 		time.sleep(delay)
-		if esteira.duty_cycle != 100:
+		if esteira.duty_cycle != MIN_DC:
 			esteira.set_duty_cycle(vel_final)
 		
 		esteira.initialVel = False
@@ -121,7 +123,7 @@ def turnOffVehicle():
 
 def turnOnMat():
 	print("Turn on mat")
-	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 75, 50, 2))
+	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 100, 50, 0.3))
 	p.daemon = True
 	p.start()
 
@@ -192,6 +194,7 @@ try:
 except KeyboardInterrupt:
 	left_motor.stop()
 	right_motor.stop()
+	esteira.stop()
 	print('Stoping motors')
 	sys.exit(0)
 
