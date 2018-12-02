@@ -2,14 +2,13 @@ import RPi.GPIO as GPIO
 import time
 import sys
 import threading
+import math
 from server import WebsocketServer
-
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 
 esteira_pode_ser_iniciada = True
-
 
 class Motor():
 	
@@ -21,6 +20,7 @@ class Motor():
 		self.duty_cycle = 0
 		self.setup()
 		self.name = 'Motor'
+		self.changingDirection = False
 
 	def setup(self):
 		# Configurando GPIO
@@ -33,16 +33,34 @@ class Motor():
 		
 		self.pwm.start(0)
 
-
 	def set_duty_cycle(self, new_dc, direction):
 		direction = float(direction)
-		self.direction = direction == 1
-		self.duty_cycle = float(new_dc)
-		# print(self.name, self.duty_cycle, self.direction)
+		new_dir = direction == -1
+
+		if self.direction != new_dir:
+			self.handleDirectionChange()
+		
+		self.direction = new_dir
+		self.duty_cycle = math.fabs(float(new_dc) - 100)
+		print(self.name, self.duty_cycle, self.direction)
 	
 	def update(self):
-		GPIO.output(self.direction_port, self.direction)
-		self.pwm.ChangeDutyCycle(self.duty_cycle)
+		if self.changingDirection == False:
+			GPIO.output(self.direction_port, self.direction)
+			self.pwm.ChangeDutyCycle(self.duty_cycle)
+		else:
+			self.pwm.ChangeDutyCycle(100)
+
+	def handleDirectionChange(self):
+		p = threading.Thread(target=Motor.finishDirectionChange, args = (self,))
+		p.daemon = True
+		p.start()
+
+	def finishDirectionChange(self):
+		if self.changingDirection == False:
+			self.changingDirection = True
+			time.sleep(1)
+			self.changingDirection = False
 		
 	def stop(self):
 		self.pwm.stop()
@@ -110,10 +128,10 @@ def turnOffMat():
 	print("Turn off mat")
 
 
-left_motor = Motor(38)
+left_motor = Motor(36,35)
 left_motor.name = 'left'
 
-right_motor = Motor(36)
+right_motor = Motor(38,37)
 right_motor.name = 'right'
 
 esteira = Esteira(32)
@@ -144,5 +162,6 @@ try:
 except KeyboardInterrupt:
 	left_motor.stop()
 	right_motor.stop()
-	print('Stoping motors')	
+	print('Stoping motors')
 	sys.exit(0)
+
