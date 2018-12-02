@@ -33,14 +33,14 @@ class Motor():
 		
 		self.pwm.start(0)
 
-	def set_duty_cycle(self, new_dc, direction):
-		direction = float(direction)
-		new_dir = direction == -1
-
-		if self.direction != new_dir:
-			self.handleDirectionChange()
+	def set_duty_cycle(self, new_dc, direction=None):
+		if direction != None:
+			direction = float(direction)
+			new_dir = direction == -1 # -1 equals True
+			if self.direction != new_dir:
+				self.handleDirectionChange()
+			self.direction = new_dir
 		
-		self.direction = new_dir
 		self.duty_cycle = math.fabs(float(new_dc) - 100)
 		print(self.name, self.duty_cycle, self.direction)
 	
@@ -71,7 +71,8 @@ class Esteira(Motor):
 		self.pin_out = pin_out
 		self.direction_port = direction_port
 		self.frequency = frequency
-		self.direction = True
+		self.direction = False
+		self.direction_default = 1 # 1 equal False
 		self.duty_cycle = 0
 		self.setup()
 		self.name = 'Esteira'
@@ -86,7 +87,7 @@ class Esteira(Motor):
 			self.pwm.ChangeDutyCycle(self.duty_cycle)
 		else:
 			if self.duty_cycle != 0:
-				self.set_duty_cycle(0, -1)
+				self.set_duty_cycle(0, 1) # 1 equals False
 				self.shouldStop = False
 		
 		
@@ -98,11 +99,11 @@ def start_inicial_esteira(esteira, vel_inicial, vel_final, delay):
 	if esteira.shouldStart and esteira.initialVel == False:
 		esteira.shouldStart = False
 		esteira.initialVel = True
-		esteira.set_duty_cycle(vel_inicial , 1)
+		esteira.set_duty_cycle(vel_inicial)
 		
 		time.sleep(delay)
 		if esteira.duty_cycle != 100:
-			esteira.set_duty_cycle(vel_final, 1)
+			esteira.set_duty_cycle(vel_final)
 		
 		esteira.initialVel = False
 	else:
