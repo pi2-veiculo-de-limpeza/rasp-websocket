@@ -49,13 +49,7 @@ class Motor():
 		if self.changingDirection == False:
 			GPIO.output(self.direction_port, self.direction)
 			self.pwm.ChangeDutyCycle(self.duty_cycle)
-			message = '{},{},{}'.format(self.name, self.duty_cycle, self.direction)
-			ws.websocket.send_message_to_all(message)
-			print('message sent: {}'.format(message) )
 		else:
-			message = '{},{},{}'.format(self.name, 100, self.direction)
-			ws.websocket.send_send_message_to_all(message)
-			print('message sent: {}'.format(message) )
 			self.pwm.ChangeDutyCycle(100)
 
 	def handleDirectionChange(self):
@@ -77,13 +71,14 @@ class Esteira(Motor):
 		self.pin_out = pin_out
 		self.direction_port = direction_port
 		self.frequency = frequency
-		self.direction = False
+		self.direction = True
 		self.duty_cycle = 0
 		self.setup()
 		self.name = 'Esteira'
 		self.shouldStop = False
 		self.initialVel = False
 		self.shouldStart = True
+		self.changingDirection = False
 		
 	def update(self):
 		if not self.shouldStop:
@@ -97,16 +92,17 @@ class Esteira(Motor):
 		
 		
 def start_inicial_esteira(esteira, vel_inicial, vel_final, delay):
+	# if esteira.shouldStart:
 	esteira.shouldStop = False
 	
 	if esteira.shouldStart and esteira.initialVel == False:
 		esteira.shouldStart = False
 		esteira.initialVel = True
-		esteira.set_duty_cycle(vel_inicial ,-1)
+		esteira.set_duty_cycle(vel_inicial , 1)
 		
 		time.sleep(delay)
-		if esteira.duty_cycle != 0:
-			esteira.set_duty_cycle(vel_final,-1)
+		if esteira.duty_cycle != 100:
+			esteira.set_duty_cycle(vel_final, 1)
 		
 		esteira.initialVel = False
 	else:
@@ -125,7 +121,7 @@ def turnOffVehicle():
 
 def turnOnMat():
 	print("Turn on mat")
-	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 25, 50, 2))
+	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 75, 50, 2))
 	p.daemon = True
 	p.start()
 
@@ -134,14 +130,36 @@ def turnOffMat():
 	esteira.shouldStart = True
 	print("Turn off mat")
 
+def sendUpdate():
+	while True:
+		if right_motor.changingDirection == False:
+			r_message = '{},{},{}'.format(right_motor.name, right_motor.duty_cycle, right_motor.direction)
+		else:
+			r_message = '{},{},{}'.format(right_motor.name, 100, right_motor.direction)
+		
+		if left_motor.changingDirection == False:
+			l_message = '{},{},{}'.format(left_motor.name, left_motor.duty_cycle, left_motor.direction)
+		else:
+			l_message = '{},{},{}'.format(left_motor.name, 100, left_motor.direction)
+		
+		e_message = '{},{},{}'.format(esteira.name, esteira.duty_cycle, esteira.direction)
 
+		sendMessage(r_message)
+		sendMessage(l_message)
+		sendMessage(e_message)
+
+		time.sleep(1)
+	
+def sendMessage(message):
+	ws.websocket.send_message_to_all(message)
+	
 left_motor = Motor(36,35)
 left_motor.name = 'left'
 
 right_motor = Motor(38,37)
 right_motor.name = 'right'
 
-esteira = Esteira(32)
+esteira = Esteira(32, 33)
 esteira.name = 'esteira'
 
 
@@ -153,10 +171,15 @@ ws.turnOffVehicleCallback(  turnOffVehicle )
 ws.turnOnMatCallback(       turnOnMat   )
 ws.turnOffMatCallback(      turnOffMat  )
 
-# handling new process
+# handling ws threading
 p = threading.Thread(target=WebsocketServer.start, args = (ws,))
 p.daemon = True
 p.start()
+
+# handling threading that sends update to receiver
+updt_receiver = threading.Thread(target=sendUpdate) 
+updt_receiver.daemon = True
+updt_receiver.start()
 
 print("\nWebsocket is running in a separate Thread")
 
