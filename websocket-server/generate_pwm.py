@@ -123,7 +123,7 @@ def turnOffVehicle():
 
 def turnOnMat():
 	print("Turn on mat")
-	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 100, 50, 0.3))
+	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 100, 50, 1))
 	p.daemon = True
 	p.start()
 
@@ -197,4 +197,3 @@ except KeyboardInterrupt:
 	esteira.stop()
 	print('Stoping motors')
 	sys.exit(0)
-
