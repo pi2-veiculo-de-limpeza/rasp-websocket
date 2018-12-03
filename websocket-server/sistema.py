@@ -22,6 +22,7 @@ TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiQWxmcmVkbyAiLCJjb2RlIjoiSmZqZmpmamYifQ
 
 gps_sensor = None
 running = True
+standby = False
 
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
@@ -74,7 +75,7 @@ class Motor():
 			self.direction = new_dir
 		
 		self.duty_cycle = math.fabs(float(new_dc) - MIN_DC)
-		print(self.name, self.duty_cycle, self.direction)
+		# print(self.name, self.duty_cycle, self.direction)
 	
 	def update(self):
 		
@@ -191,6 +192,7 @@ def sendUpdate():
 		time.sleep(1)
 	
 def sendMessage(message):
+	print(message)
 	ws.websocket.send_message_to_all(message)
 
 class SensorPeso(threading.Thread):
@@ -255,6 +257,8 @@ class SensorPeso(threading.Thread):
 				if 0.80 < max(prop1, prop2) < 1.20:
 					print('Peso: {peso}g'.format(peso=peso_atual))
 					status = integrate_api.integrate_peso_lixo(peso_atual, str(datetime.datetime.now()), TOKEN)
+					sendMessage('weight,{}'.format(peso_atual))
+					print('weight,{}'.format(peso_atual))
 					mensagem(status, 'Peso')
 
 				peso_pen = peso_ult
@@ -276,7 +280,7 @@ class SensorVolume(threading.Thread):
 	def distance(self):
 		GPIO.output(self.TRIGGER, True)
 	 
-		time.sleep(0.00001)
+		time.sleep(0.1)
 		GPIO.output(self.TRIGGER, False)
 	 
 		StartTime = time.time()
@@ -284,9 +288,11 @@ class SensorVolume(threading.Thread):
 	 
 		while GPIO.input(self.ECHO) == 0:
 			StartTime = time.time()
+			time.sleep(0.1)
 	 
 		while GPIO.input(self.ECHO) == 1:
 			StopTime = time.time()
+			time.sleep(0.1)
 	 
 		TimeElapsed = StopTime - StartTime
 		distance = (TimeElapsed * 34300) / 2
@@ -307,6 +313,7 @@ class SensorVolume(threading.Thread):
 					if 0.95 < max(prop1, prop2) < 1.05: # Lixeira profundidade 40cm
 						volume_percent = (dist_atual * 100) / 40
 						print ("Volume livre: {vol}% | Distancia: {dist} cm".format(vol=round(volume_percent,1),dist=dist_atual))
+						sendMessage( 'volume,{}'.format(volume_percent) )
 						if volume_percent < 40:
 							print bcolors.BOLD + bcolors.WARNING + "LIXO CHEIO!\n" + bcolors.ENDC
 							status = integrate_api.integrate_monitory_volume_sensor_dump(True, str(datetime.datetime.now()), TOKEN)
@@ -338,10 +345,15 @@ class SensorMPU6050(threading.Thread):
 
 	def run(self):
 		while running:
-			print("Temperatura: {temp} °C".format(temp=round(self.sensor.get_temp(),1)))
+			temp = round(self.sensor.get_temp(),1)
+			print("Temperatura: {temp} °C".format(temp=temp) )
 			accel = self.sensor.get_accel_data()
-			print("Ax: {valor} m/s²".format(valor=round(accel['x'],2)))
-			print("Ay: {valor} m/s²".format(valor=round(accel['y'],2)))
+			x = round(accel['x'],2)
+			y = round(accel['y'],2)
+			print("Ax: {valor} m/s²".format(valor=x) )
+			print("Ay: {valor} m/s²".format(valor=y) )
+
+			sendMessage( 'acc,{},{},{}'.format(x,y,temp) )
 			time.sleep(2)
 
 
@@ -361,9 +373,9 @@ right_motor.name = 'right'
 esteira = Esteira(32, 33)
 esteira.name = 'esteira'
 
-peso = SensorPeso()
-volume = SensorVolume()
-acegyrotemp = SensorMPU6050()
+# peso = SensorPeso()
+# volume = SensorVolume()
+# acegyrotemp = SensorMPU6050()
 
 ws = WebsocketServer()
 
@@ -398,9 +410,9 @@ try:
 		if STATUS == START:
 			running = True
 			
-			peso.start()
-			volume.start()
-			acegyrotemp.start()
+			# peso.start()
+			# volume.start()
+			# acegyrotemp.start()
 			
 			STATUS = RUNNING
 
