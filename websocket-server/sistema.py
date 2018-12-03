@@ -11,7 +11,7 @@ import RPi.GPIO as GPIO
 import integrate_api
 
 from mpu6050 import mpu6050
-from gps import gps
+from gps3 import gps3
 from hx711 import HX711
 
 from server import WebsocketServer
@@ -159,7 +159,7 @@ def turnOnVehicle():
 
 def turnOnMat():
 	print("Turn on mat")
-	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 100, 50, 1))
+	p = threading.Thread(target=start_inicial_esteira, args = (esteira, 100, 50, 0.65))
 	p.daemon = True
 	p.start()
 
@@ -288,11 +288,11 @@ class SensorVolume(threading.Thread):
 	 
 		while GPIO.input(self.ECHO) == 0:
 			StartTime = time.time()
-			time.sleep(0.1)
+			time.sleep(0.5)
 	 
 		while GPIO.input(self.ECHO) == 1:
 			StopTime = time.time()
-			time.sleep(0.1)
+			time.sleep(0.5)
 	 
 		TimeElapsed = StopTime - StartTime
 		distance = (TimeElapsed * 34300) / 2
@@ -329,13 +329,20 @@ class SensorGPS(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 		self.daemon = True
-		global gps_sensor
-		gps_sensor = gps(mode=1)
+		self.gps_socket = gps3.GPSDSocket()
+		self.data_stream = gps3.DataStream()
 
 	def run(self):
-		global gps_sensor
-		while running:
-			gps_sensor.next()
+		self.gps_socket.connect()
+		self.gps_socket.watch()
+
+		for new_data in self.gps_socket:
+			if new_data:
+				self.data_stream.unpack(new_data)
+				print('Longitude = {lon} °'.format(lon=self.data_stream.TPV['lon']))
+				print('Latitude = {lat} °'.format(lat=self.data_stream.TPV['lat']))
+			time.sleep(0.2)
+
 
 class SensorMPU6050(threading.Thread):
 	def __init__(self):
@@ -346,15 +353,15 @@ class SensorMPU6050(threading.Thread):
 	def run(self):
 		while running:
 			temp = round(self.sensor.get_temp(),1)
-			print("Temperatura: {temp} °C".format(temp=temp) )
+			# print("Temperatura: {temp} °C".format(temp=temp) )
 			accel = self.sensor.get_accel_data()
 			x = round(accel['x'],2)
 			y = round(accel['y'],2)
-			print("Ax: {valor} m/s²".format(valor=x) )
-			print("Ay: {valor} m/s²".format(valor=y) )
+			# print("Ax: {valor} m/s²".format(valor=x) )
+			# print("Ay: {valor} m/s²".format(valor=y) )
 
 			sendMessage( 'acc,{},{},{}'.format(x,y,temp) )
-			time.sleep(2)
+			time.sleep(1)
 
 
 def mensagem(status, sensor):
@@ -364,6 +371,7 @@ def mensagem(status, sensor):
 		print bcolors.BOLD + bcolors.FAIL + "[{sens}] Falha no envio...".format(sens=sensor) + bcolors.ENDC
 
 
+# inicializando Motores
 left_motor = Motor(36,35)
 left_motor.name = 'left'
 
@@ -373,9 +381,11 @@ right_motor.name = 'right'
 esteira = Esteira(32, 33)
 esteira.name = 'esteira'
 
-# peso = SensorPeso()
-# volume = SensorVolume()
-# acegyrotemp = SensorMPU6050()
+# inicializando Sensores
+peso = SensorPeso()
+volume = SensorVolume()
+acegyrotemp = SensorMPU6050()
+sensor_gps = SensorGPS()
 
 ws = WebsocketServer()
 
@@ -399,6 +409,20 @@ updt_receiver.start()
 
 print("\nWebsocket is running in a separate Thread")
 
+# try:
+# 	while True:
+# 		left_motor.update()
+# 		right_motor.update()
+# 		esteira.update()
+# 		time.sleep(0.01)
+# except KeyboardInterrupt:
+# 	left_motor.stop()
+# 	right_motor.stop()
+# 	esteira.stop()
+# 	GPIO.cleanup()
+# 	print('Stoping motors')
+# 	sys.exit(0)
+
 
 try:
 	while True:
@@ -410,17 +434,22 @@ try:
 		if STATUS == START:
 			running = True
 			
-			# peso.start()
-			# volume.start()
-			# acegyrotemp.start()
+			peso.start()
+			volume.start()
+			acegyrotemp.start()
+			sensor_gps.start()
 			
 			STATUS = RUNNING
 
 		elif STATUS == STAND_BY:
 			running = False
+		time.sleep(0.1)
 
 except(KeyboardInterrupt, SystemExit):
+	running = False
 	left_motor.stop()
 	right_motor.stop()
 	esteira.stop()
-	running = False
+	GPIO.cleanup()
+	print('Stoping all')
+	sys.exit(0)

@@ -34,34 +34,28 @@ class WebsocketServer():
 		if command == 'calibrate':
 			if self.calibrate:
 				self.calibrate(array_message[1])
-
-		if command == 'right':
+		elif command == 'right':
 			if self.rightMotor:
 				self.rightMotor(array_message[1], array_message[2])
-		
-		if command == 'left':
+		elif command == 'left':
 			if self.leftMotor:
 				self.leftMotor(array_message[1], array_message[2])
-
-		if command == 'stand-by':
+		elif command == 'stand-by':
 			if self.turnOffVehicle:
 				self.turnOffVehicle()
 			else:
 				print('error: callback not setted for ' + command)
-		
-		if command == 'turn-on':
+		elif command == 'turn-on':
 			if self.turnOn:
 				self.turnOn()
 			else:
 				print('error: callback not setted for ' + command)
-
-		if command == 'turn-off-mat':
+		elif command == 'turn-off-mat':
 			if self.turnOffMat:
 				self.turnOffMat()
 			else:
 				print('error: callback not setted for ' + command)
-
-		if command == 'turn-on-mat':
+		elif command == 'turn-on-mat':
 			if self.turnOnMat:
 				self.turnOnMat()
 			else:
