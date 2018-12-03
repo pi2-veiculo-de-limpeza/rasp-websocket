@@ -167,6 +167,9 @@ def turnOffMat():
 	esteira.shouldStart = True
 	print("Turn off mat")
 
+def calibrateScale(weight):
+	peso.set()
+
 def sendUpdate():
 	while True:
 		if right_motor.changingDirection == False:
@@ -195,25 +198,33 @@ class SensorPeso(threading.Thread):
 		threading.Thread.__init__(self)
 		self.daemon = True
 		self.HX711_SENSOR = HX711(PIN_OUT, PIN_SCK)
+		data = self.HX711_SENSOR.get_raw_data_mean(times=1)
+		result = self.HX711_SENSOR.zero(times=10)
+		data = self.HX711_SENSOR.get_data_mean(times=10)
 		self.done_setting = False
 	
 	def finish_setting(self):
 		return self.done_setting
 	
-	def set(self):
-		raw_input('Coloque um peso conhecido e pressione ENTER')
+	def set(self, peso=None):
+
 		data = self.HX711_SENSOR.get_data_mean(times=10)
-		
+
+		if(peso != None):
+			raw_input('Coloque um peso conhecido e pressione ENTER')
+
 		if data != False:
-			tara = float(raw_input('Escreva a quantidade de gramas e pressione ENTER: '))
+			if(peso != None):
+				tara = float(raw_input('Escreva a quantidade de gramas e pressione ENTER: '))
+			else:
+				tara = peso
 			ratio = data / tara
 			self.HX711_SENSOR.set_scale_ratio(scale_ratio=ratio)
 		else:
 			raise ValueError('Não foi possível calcular a tara da balanca')
-		
 		self.done_setting = True
-		print bcolors.BOLD + bcolors.OKGREEN + "COMEÇANDO..." + bcolors.ENDC
-
+		
+		
 	def run(self):
 		try:
 			peso_pen = int(self.HX711_SENSOR.get_weight_mean(6))
@@ -350,6 +361,10 @@ right_motor.name = 'right'
 esteira = Esteira(32, 33)
 esteira.name = 'esteira'
 
+peso = SensorPeso()
+volume = SensorVolume()
+acegyrotemp = SensorMPU6050()
+
 ws = WebsocketServer()
 
 ws.rightMotorCallback(      rigthMotor  )
@@ -358,6 +373,7 @@ ws.turnOffVehicleCallback(  turnOffVehicle )
 ws.turnOnMatCallback(       turnOnMat   )
 ws.turnOffMatCallback(      turnOffMat  )
 ws.turnOnCallback(          turnOnVehicle )
+ws.calibrateCallback(       calibrateScale )
 
 # handling ws threading
 p = threading.Thread(target=WebsocketServer.start, args = (ws,))
@@ -381,16 +397,6 @@ try:
 		# STATUS = web_socket.get_status()
 		if STATUS == START:
 			running = True
-			peso = SensorPeso()
-			volume = SensorVolume()
-			acegyrotemp = SensorMPU6050()
-			
-			# peso.set() # Manual setting
-			
-			# done_setting_peso = peso.finish_setting()
-			
-			# while not done_setting_peso:
-			# 	done_setting_peso = peso.finish_setting()
 			
 			peso.start()
 			volume.start()

@@ -31,6 +31,10 @@ class WebsocketServer():
 		array_message = message.split(',')
 		command = array_message[0]
 
+		if command == 'calibrate':
+			if self.calibrate:
+				self.calibrate(array_message[1])
+
 		if command == 'right':
 			if self.rightMotor:
 				self.rightMotor(array_message[1], array_message[2])
@@ -80,3 +84,6 @@ class WebsocketServer():
 
 	def turnOnCallback(self, callback):
 		self.turnOn = callback
+
+	def calibrateCallback(self, callback):
+		self.calibrate = callback
