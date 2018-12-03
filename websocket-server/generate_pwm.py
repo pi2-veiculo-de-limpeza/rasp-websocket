@@ -119,7 +119,12 @@ def leftMotor(value, direction):
 	left_motor.set_duty_cycle(value, direction)
 
 def turnOffVehicle():
-	print("Turn off vehicle")
+	print("Standby vehicle")
+	sendMessage('stand-by')
+
+def turnOnVehicle():
+	print('Turn on vehicle')
+	sendMessage('turn-on')
 
 def turnOnMat():
 	print("Turn on mat")
@@ -172,6 +177,7 @@ ws.leftMotorCallback(       leftMotor   )
 ws.turnOffVehicleCallback(  turnOffVehicle )
 ws.turnOnMatCallback(       turnOnMat   )
 ws.turnOffMatCallback(      turnOffMat  )
+ws.turnOnCallback(          turnOnVehicle )
 
 # handling ws threading
 p = threading.Thread(target=WebsocketServer.start, args = (ws,))

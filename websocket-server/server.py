@@ -39,9 +39,15 @@ class WebsocketServer():
 			if self.leftMotor:
 				self.leftMotor(array_message[1], array_message[2])
 
-		if command == 'turn-off-vehicle':
+		if command == 'stand-by':
 			if self.turnOffVehicle:
 				self.turnOffVehicle()
+			else:
+				print('error: callback not setted for ' + command)
+		
+		if command == 'turn-on':
+			if self.turnOn:
+				self.turnOn()
 			else:
 				print('error: callback not setted for ' + command)
 
@@ -71,3 +77,6 @@ class WebsocketServer():
 
 	def turnOffMatCallback(self, callback):
 		self.turnOffMat = callback
+
+	def turnOnCallback(self, callback):
+		self.turnOn = callback
