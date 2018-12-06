@@ -1,8 +1,8 @@
 ## Raspberry Project
 
 ### sensores
-* bateria
-* distancia percorrida
+* Temperatura
+* Velocidade em x e y
+* PWM e Direção dos motores
 * peso
 * volume
-* obstáculo
